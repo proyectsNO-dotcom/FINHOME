@@ -1,122 +1,117 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import React, { useState } from 'react';
+import { AppProvider, useApp } from './context/AppContext';
+import { Header } from './components/layout/Header';
+import { BottomNav, NavTab } from './components/layout/BottomNav';
+import { DashboardView } from './components/dashboard/DashboardView';
+import { InstallmentsView } from './components/transactions/InstallmentsView';
+import { BudgetProgress } from './components/budgets/BudgetProgress';
+import { DollarsModule } from './components/investments/DollarsModule';
+import { BrokerTransfers } from './components/investments/BrokerTransfers';
+import { FixedExpenses } from './components/household/FixedExpenses';
+import { ShoppingList } from './components/household/ShoppingList';
+import { TransactionModal } from './components/transactions/TransactionModal';
+import { NotificationsModal } from './components/notifications/NotificationsModal';
+import { DollarSign, Briefcase } from 'lucide-react';
 
-function App() {
-  const [count, setCount] = useState(0)
+const MainApp: React.FC = () => {
+  const { activeSpace } = useApp();
+  const [activeTab, setActiveTab] = useState<NavTab>('resumen');
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState<boolean>(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState<boolean>(false);
+  const [investmentsSubTab, setInvestmentsSubTab] = useState<'dollars' | 'brokers'>('dollars');
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-300">
+      {/* Header Fijo con Switcher Dual */}
+      <Header onOpenNotifications={() => setIsNotificationsOpen(true)} />
 
-      <div className="ticks"></div>
+      {/* Contenedor Principal Mobile-First */}
+      <main className="flex-1 max-w-md w-full mx-auto px-4 pt-4">
+        
+        {/* Renderizado Condicional de Pantallas */}
+        {activeTab === 'resumen' && (
+          <DashboardView 
+            onOpenQuickAdd={() => setIsQuickAddOpen(true)} 
+            onNavigateTab={(tab) => setActiveTab(tab)}
+          />
+        )}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        {activeTab === 'cuotas' && (
+          <InstallmentsView />
+        )}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        {activeTab === 'presupuesto' && (
+          <BudgetProgress />
+        )}
+
+        {activeTab === 'inversiones' && (
+          <div className="space-y-4">
+            {/* Sub-selector Dólares vs CEDEARs/Brokers */}
+            <div className="flex p-1 bg-slate-200/80 dark:bg-slate-800 rounded-2xl border border-slate-300 dark:border-slate-700">
+              <button
+                onClick={() => setInvestmentsSubTab('dollars')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                  investmentsSubTab === 'dollars'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <DollarSign className="w-4 h-4" />
+                <span>Dólares (PPP)</span>
+              </button>
+              <button
+                onClick={() => setInvestmentsSubTab('brokers')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                  investmentsSubTab === 'brokers'
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400'
+                }`}
+              >
+                <Briefcase className="w-4 h-4" />
+                <span>CEDEARs / Broker</span>
+              </button>
+            </div>
+
+            {investmentsSubTab === 'dollars' ? <DollarsModule /> : <BrokerTransfers />}
+          </div>
+        )}
+
+        {activeTab === 'servicios' && (
+          <FixedExpenses />
+        )}
+
+        {activeTab === 'compras' && (
+          <ShoppingList />
+        )}
+      </main>
+
+      {/* Barra de Navegación Inferior Ergonómica */}
+      <BottomNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onOpenQuickAdd={() => setIsQuickAddOpen(true)}
+      />
+
+      {/* Modales In-App */}
+      <TransactionModal
+        isOpen={isQuickAddOpen}
+        onClose={() => setIsQuickAddOpen(false)}
+      />
+
+      <NotificationsModal
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+      />
+    </div>
+  );
+};
+
+export function App() {
+  return (
+    <AppProvider>
+      <MainApp />
+    </AppProvider>
+  );
 }
 
-export default App
+export default App;
