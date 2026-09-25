@@ -2,7 +2,10 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions
+    // ==========================================
+    // FUNCIONES DE SEGURIDAD Y CONTROL DE ACCESO
+    // ==========================================
+
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -16,36 +19,74 @@ service cloud.firestore {
         exists(/databases/$(database)/documents/households/$(householdId)/members/$(request.auth.uid));
     }
 
-    // --- 1. Espacio Privado ("Mi Billetera") ---
-    // Aislamiento absoluto: sólo el propio usuario puede leer y escribir
+    function isHouseholdAdmin(householdId) {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/households/$(householdId)).data.createdBy == request.auth.uid;
+    }
+
+    // Validadores de integridad de datos y tipos
+    function isValidTransactionData() {
+      let data = request.resource.data;
+      return data.amount is number && data.amount > 0 && data.amount <= 1000000000
+        && data.description is string && data.description.size() <= 200
+        && (data.type == 'EXPENSE' || data.type == 'INCOME');
+    }
+
+    // ==========================================
+    // 1. ESPACIO PRIVADO ("Mi Billetera")
+    // ==========================================
+    // Aislamiento estricto por UID: Nadie más puede leer ni alterar los datos personales
     match /users/{userId} {
       allow read, write: if isOwner(userId);
+
+      // Transacciones, Cuotas, Inversiones personales
+      match /transactions/{txId} {
+        allow read, write: if isOwner(userId) && (request.method == 'delete' || isValidTransactionData());
+      }
 
       match /{subcollection}/{document=**} {
         allow read, write: if isOwner(userId);
       }
     }
 
-    // --- 2. Espacio Colaborativo ("El Hogar") ---
-    // Acceso restringido a miembros activos del hogar
+    // ==========================================
+    // 2. ESPACIO COLABORATIVO ("El Hogar")
+    // ==========================================
+    // Protección RBAC: Miembros activos vs Administrador/Creador
     match /households/{householdId} {
-      // Creación: cualquier usuario autenticado puede crear un hogar nuevo
-      allow create: if isAuthenticated();
-      // Lectura y actualización: sólo miembros verificados
+      // Creación: Sólo usuarios autenticados
+      allow create: if isAuthenticated() && request.resource.data.createdBy == request.auth.uid;
+      
+      // Lectura y edición: Sólo miembros registrados del hogar
       allow read, update: if isHouseholdMember(householdId);
-      allow delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+      
+      // Eliminación (Ruta admin protegida): Exclusiva del creador del hogar
+      allow delete: if isHouseholdAdmin(householdId);
 
-      // Subcolección de Miembros
+      // Gestión de miembros
       match /members/{memberId} {
         allow read: if isHouseholdMember(householdId);
-        // Permitir unirse o ser administrado por un miembro existente
-        allow write: if isAuthenticated() && (request.auth.uid == memberId || isHouseholdMember(householdId));
+        // Sólo el propio usuario o el admin pueden gestionar la membresía
+        allow write: if isAuthenticated() && (request.auth.uid == memberId || isHouseholdAdmin(householdId));
       }
 
-      // Gastos, Cuotas, Pagos fijos, Lista de compras y Feed colaborativo
+      // Gastos compartidos
+      match /transactions/{txId} {
+        allow read: if isHouseholdMember(householdId);
+        allow write: if isHouseholdMember(householdId) && (request.method == 'delete' || isValidTransactionData());
+      }
+
+      // Pagos fijos, lista de compras y categorías compartidas
       match /{subcollection}/{docId} {
         allow read, write: if isHouseholdMember(householdId);
       }
+    }
+
+    // ==========================================
+    // DENEGACIÓN POR DEFECTO
+    // ==========================================
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }

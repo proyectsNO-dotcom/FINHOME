@@ -1,14 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useAuth } from '../../context/AuthContext';
 import { formatMonth, getNextMonth, getPreviousMonth } from '../../utils/formatters';
-import { Wallet, Home, Bell, ChevronLeft, ChevronRight, WifiOff, Tags } from 'lucide-react';
+import { Wallet, Home, Bell, ChevronLeft, ChevronRight, WifiOff, Tags, User, LogOut, LogIn, Shield } from 'lucide-react';
 
 interface HeaderProps {
   onOpenNotifications: () => void;
   onOpenCategories?: () => void;
+  onOpenAuth?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenNotifications, onOpenCategories }) => {
+export const Header: React.FC<HeaderProps> = ({ 
+  onOpenNotifications, 
+  onOpenCategories,
+  onOpenAuth 
+}) => {
+  const { user, userProfile, isGuest, logout } = useAuth();
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const { 
     activeSpace, 
     setActiveSpace, 
@@ -84,6 +92,70 @@ export const Header: React.FC<HeaderProps> = ({ onOpenNotifications, onOpenCateg
                 </span>
               )}
             </button>
+
+            {/* Perfil / Login Seguro */}
+            <div className="relative">
+              {user ? (
+                <button
+                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                  className="flex items-center justify-center w-8 h-8 rounded-xl bg-indigo-600 text-white font-bold text-xs ring-2 ring-indigo-500/20 shadow-sm active:scale-95 transition"
+                  title={userProfile?.displayName || user.email || 'Mi Cuenta'}
+                >
+                  {user.photoURL ? (
+                    <img src={user.photoURL} alt="Avatar" className="w-full h-full rounded-xl object-cover" />
+                  ) : (
+                    <span>{(userProfile?.displayName || user.email || 'U')[0].toUpperCase()}</span>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={onOpenAuth}
+                  className="flex items-center gap-1 py-1.5 px-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-bold text-xs hover:bg-indigo-100 transition active:scale-95"
+                  title="Iniciar Sesión"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Ingresar</span>
+                </button>
+              )}
+
+              {/* Popover Menú Perfil */}
+              {isProfileMenuOpen && user && (
+                <div 
+                  className="absolute right-0 mt-2 w-64 p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 z-50 animate-in fade-in zoom-in-95 duration-150"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-100 dark:border-slate-800">
+                    <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white font-bold text-sm flex items-center justify-center">
+                      {(userProfile?.displayName || user.email || 'U')[0].toUpperCase()}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                        {userProfile?.displayName || 'Usuario'}
+                      </p>
+                      <p className="text-[10px] text-slate-400 truncate">
+                        {user.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="py-2 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    <Shield className="w-3.5 h-3.5 text-emerald-500" />
+                    <span>Sesión Autenticada con Firebase</span>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsProfileMenuOpen(false);
+                    }}
+                    className="w-full mt-1 py-2 px-3 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 transition"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>Cerrar Sesión</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

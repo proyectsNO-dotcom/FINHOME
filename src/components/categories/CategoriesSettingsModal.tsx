@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { CategoryItem } from '../../types';
+import { sanitizeText } from '../../utils/security';
 import { X, Plus, Tag, ArrowDownLeft, ArrowUpRight, Check, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -32,7 +33,7 @@ export const CategoriesSettingsModal: React.FC<CategoriesSettingsModalProps> = (
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanLabel = newLabel.trim();
+    const cleanLabel = sanitizeText(newLabel, 40);
     if (!cleanLabel) return;
 
     addCustomCategory(cleanLabel, activeTab);

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
+import { AuthProvider } from './context/AuthContext';
 import { Header } from './components/layout/Header';
 import { BottomNav, NavTab } from './components/layout/BottomNav';
 import { DashboardView } from './components/dashboard/DashboardView';
@@ -12,6 +13,7 @@ import { ShoppingList } from './components/household/ShoppingList';
 import { TransactionModal } from './components/transactions/TransactionModal';
 import { NotificationsModal } from './components/notifications/NotificationsModal';
 import { CategoriesSettingsModal } from './components/categories/CategoriesSettingsModal';
+import { AuthModal } from './components/auth/AuthModal';
 import { DollarSign, Briefcase } from 'lucide-react';
 
 const MainApp: React.FC = () => {
@@ -20,6 +22,7 @@ const MainApp: React.FC = () => {
   const [isQuickAddOpen, setIsQuickAddOpen] = useState<boolean>(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState<boolean>(false);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState<boolean>(false);
+  const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
   const [investmentsSubTab, setInvestmentsSubTab] = useState<'dollars' | 'brokers'>('dollars');
 
   return (
@@ -28,6 +31,7 @@ const MainApp: React.FC = () => {
       <Header 
         onOpenNotifications={() => setIsNotificationsOpen(true)}
         onOpenCategories={() => setIsCategoriesOpen(true)}
+        onOpenAuth={() => setIsAuthOpen(true)}
       />
 
       {/* Contenedor Principal Mobile-First */}
@@ -116,15 +120,22 @@ const MainApp: React.FC = () => {
         isOpen={isCategoriesOpen}
         onClose={() => setIsCategoriesOpen(false)}
       />
+
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
+      />
     </div>
   );
 };
 
 export function App() {
   return (
-    <AppProvider>
-      <MainApp />
-    </AppProvider>
+    <AuthProvider>
+      <AppProvider>
+        <MainApp />
+      </AppProvider>
+    </AuthProvider>
   );
 }
 

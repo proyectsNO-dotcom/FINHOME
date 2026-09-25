@@ -3,8 +3,11 @@ import { defineConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
-export default defineConfig({
-  base: process.env.NODE_ENV === 'production' ? '/FINHOME/' : '/',
+export default defineConfig(({ mode }) => ({
+  base: mode === 'production' ? '/FINHOME/' : '/',
+  oxc: mode === 'production' ? ({
+    drop: ['console', 'debugger']
+  } as any) : undefined,
   plugins: [
     react(),
     VitePWA({
@@ -73,4 +76,4 @@ export default defineConfig({
       }
     })
   ]
-})
+}))

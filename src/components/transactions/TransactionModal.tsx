@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { PaymentMethod } from '../../types';
 import { preclassifyDescription } from '../../utils/financialCalculators';
 import { formatCurrency, getNextMonth } from '../../utils/formatters';
+import { sanitizeText, sanitizeAmount } from '../../utils/security';
 import { X, Sparkles, CreditCard, Calendar, Check, ArrowDownLeft, ArrowUpRight, Plus, Settings } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -82,17 +83,20 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (numAmount <= 0 || !description.trim()) return;
+    const cleanAmount = sanitizeAmount(numAmount, 1, 500_000_000);
+    const cleanDescription = sanitizeText(description, 120);
+
+    if (cleanAmount <= 0 || !cleanDescription) return;
 
     addTransaction({
       type,
-      amount: numAmount,
-      description: description.trim(),
+      amount: cleanAmount,
+      description: cleanDescription,
       categoryId: category,
       paymentMethod,
       isInstallment: type === 'EXPENSE' ? isInstallment : false,
       installmentCount: isInstallment ? installmentCount : 1,
-      cardName: isInstallment ? cardName : undefined
+      cardName: isInstallment && cardName ? sanitizeText(cardName, 50) : undefined
     });
 
     // Micro-animación de éxito
