@@ -1,13 +1,14 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { formatMonth, getNextMonth, getPreviousMonth } from '../../utils/formatters';
-import { Wallet, Home, Bell, ChevronLeft, ChevronRight, WifiOff } from 'lucide-react';
+import { Wallet, Home, Bell, ChevronLeft, ChevronRight, WifiOff, Tags } from 'lucide-react';
 
 interface HeaderProps {
   onOpenNotifications: () => void;
+  onOpenCategories?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenNotifications }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenNotifications, onOpenCategories }) => {
   const { 
     activeSpace, 
     setActiveSpace, 
@@ -58,6 +59,17 @@ export const Header: React.FC<HeaderProps> = ({ onOpenNotifications }) => {
                 <WifiOff className="w-3 h-3" />
                 <span className="hidden sm:inline">Offline</span>
               </div>
+            )}
+
+            {onOpenCategories && (
+              <button
+                onClick={onOpenCategories}
+                className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition active:scale-95"
+                title="Configurar Categorías"
+                aria-label="Configurar Categorías"
+              >
+                <Tags className="w-4 h-4" />
+              </button>
             )}
 
             <button

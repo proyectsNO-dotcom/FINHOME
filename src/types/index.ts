@@ -13,24 +13,25 @@ export interface UserProfile {
 
 export type PaymentMethod = 'CASH' | 'DEBIT' | 'CREDIT_CARD' | 'TRANSFER';
 
-export type ExpenseCategory = 
-  | 'supermercado'
-  | 'servicios'
-  | 'alquiler_expensas'
-  | 'salidas_ocio'
-  | 'ropa_calzado'
-  | 'salud_farmacia'
-  | 'transporte_auto'
-  | 'educacion'
-  | 'tecnologia_hogar'
-  | 'otros';
+export interface CategoryItem {
+  id: string;
+  label: string;
+  type: 'EXPENSE' | 'INCOME';
+  iconName?: string;
+  icon?: string;
+  color?: string;
+  isCustom?: boolean;
+}
+
+export type ExpenseCategory = string;
+export type IncomeCategory = string;
 
 export interface Transaction {
   id: string;
   type: 'EXPENSE' | 'INCOME';
   amount: number;
   description: string;
-  categoryId: ExpenseCategory;
+  categoryId: string;
   paymentMethod: PaymentMethod;
   space: SpaceType;
   isInstallment: boolean;

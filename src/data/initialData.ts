@@ -1,5 +1,6 @@
 import { 
-  ExpenseCategory, 
+  ExpenseCategory,
+  CategoryItem, 
   Transaction, 
   Installment, 
   DollarPortfolioSummary, 
@@ -12,75 +13,163 @@ import {
 } from '../types';
 import { getCurrentPeriodMonth, getNextMonth, getPreviousMonth } from '../utils/formatters';
 
-export interface CategoryMetadata {
-  id: ExpenseCategory;
-  label: string;
-  iconName: string;
-  color: string;
-}
-
-export const CATEGORIES_META: Record<ExpenseCategory, CategoryMetadata> = {
-  supermercado: {
+export const INITIAL_EXPENSE_CATEGORIES: CategoryItem[] = [
+  {
     id: 'supermercado',
     label: 'Supermercado & Almacén',
+    type: 'EXPENSE',
     iconName: 'ShoppingCart',
+    icon: '🛒',
     color: 'bg-amber-100 text-amber-700 border-amber-200'
   },
-  servicios: {
+  {
     id: 'servicios',
     label: 'Luz, Gas, Agua e Internet',
+    type: 'EXPENSE',
     iconName: 'Zap',
+    icon: '💡',
     color: 'bg-blue-100 text-blue-700 border-blue-200'
   },
-  alquiler_expensas: {
+  {
     id: 'alquiler_expensas',
     label: 'Alquiler & Expensas',
+    type: 'EXPENSE',
     iconName: 'Home',
+    icon: '🏠',
     color: 'bg-emerald-100 text-emerald-700 border-emerald-200'
   },
-  salidas_ocio: {
+  {
     id: 'salidas_ocio',
     label: 'Salidas, Bares & Delivery',
+    type: 'EXPENSE',
     iconName: 'Coffee',
+    icon: '🍕',
     color: 'bg-purple-100 text-purple-700 border-purple-200'
   },
-  ropa_calzado: {
+  {
     id: 'ropa_calzado',
     label: 'Ropa & Calzado',
+    type: 'EXPENSE',
     iconName: 'ShoppingBag',
+    icon: '👕',
     color: 'bg-pink-100 text-pink-700 border-pink-200'
   },
-  salud_farmacia: {
+  {
     id: 'salud_farmacia',
     label: 'Salud, Remedios & Prepaga',
+    type: 'EXPENSE',
     iconName: 'HeartPulse',
+    icon: '💊',
     color: 'bg-red-100 text-red-700 border-red-200'
   },
-  transporte_auto: {
+  {
     id: 'transporte_auto',
     label: 'Combustible, SUBE & Auto',
+    type: 'EXPENSE',
     iconName: 'Car',
+    icon: '🚗',
     color: 'bg-slate-100 text-slate-700 border-slate-200'
   },
-  educacion: {
+  {
     id: 'educacion',
     label: 'Cursos, Libros & Educación',
+    type: 'EXPENSE',
     iconName: 'GraduationCap',
+    icon: '📚',
     color: 'bg-indigo-100 text-indigo-700 border-indigo-200'
   },
-  tecnologia_hogar: {
+  {
     id: 'tecnologia_hogar',
     label: 'Electro & Muebles Hogar',
+    type: 'EXPENSE',
     iconName: 'Tv',
+    icon: '💻',
     color: 'bg-teal-100 text-teal-700 border-teal-200'
   },
-  otros: {
+  {
     id: 'otros',
     label: 'Otros Gastos Varios',
+    type: 'EXPENSE',
     iconName: 'MoreHorizontal',
+    icon: '📦',
     color: 'bg-gray-100 text-gray-700 border-gray-200'
   }
-};
+];
+
+export const INITIAL_INCOME_CATEGORIES: CategoryItem[] = [
+  {
+    id: 'sueldo_principal',
+    label: 'Sueldo / Salario Principal',
+    type: 'INCOME',
+    iconName: 'Briefcase',
+    icon: '💼',
+    color: 'bg-emerald-100 text-emerald-700 border-emerald-200'
+  },
+  {
+    id: 'freelance_honorarios',
+    label: 'Honorarios / Freelance',
+    type: 'INCOME',
+    iconName: 'Laptop',
+    icon: '💻',
+    color: 'bg-cyan-100 text-cyan-700 border-cyan-200'
+  },
+  {
+    id: 'aguinaldo_sac',
+    label: 'Aguinaldo (SAC)',
+    type: 'INCOME',
+    iconName: 'Gift',
+    icon: '🎁',
+    color: 'bg-amber-100 text-amber-700 border-amber-200'
+  },
+  {
+    id: 'alquileres_cobrados',
+    label: 'Rentas / Alquiler Cobrado',
+    type: 'INCOME',
+    iconName: 'Building',
+    icon: '🏢',
+    color: 'bg-indigo-100 text-indigo-700 border-indigo-200'
+  },
+  {
+    id: 'ventas_usados',
+    label: 'Venta de Bienes / Usados',
+    type: 'INCOME',
+    iconName: 'Tag',
+    icon: '🏷️',
+    color: 'bg-purple-100 text-purple-700 border-purple-200'
+  },
+  {
+    id: 'rendimientos_inversiones',
+    label: 'Dividendos & Rendimientos',
+    type: 'INCOME',
+    iconName: 'TrendingUp',
+    icon: '📈',
+    color: 'bg-teal-100 text-teal-700 border-teal-200'
+  },
+  {
+    id: 'reintegros_devoluciones',
+    label: 'Reintegros / Reembolsos',
+    type: 'INCOME',
+    iconName: 'RotateCcw',
+    icon: '🔄',
+    color: 'bg-blue-100 text-blue-700 border-blue-200'
+  },
+  {
+    id: 'otros_ingresos',
+    label: 'Otros Ingresos',
+    type: 'INCOME',
+    iconName: 'PlusCircle',
+    icon: '💰',
+    color: 'bg-gray-100 text-gray-700 border-gray-200'
+  }
+];
+
+export const CATEGORIES_META: Record<string, CategoryItem> = [
+  ...INITIAL_EXPENSE_CATEGORIES,
+  ...INITIAL_INCOME_CATEGORIES
+].reduce((acc, item) => {
+  acc[item.id] = item;
+  return acc;
+}, {} as Record<string, CategoryItem>);
 
 const currentMonth = getCurrentPeriodMonth();
 const prevMonth = getPreviousMonth(currentMonth);
@@ -135,7 +224,7 @@ export const INITIAL_TRANSACTIONS: Transaction[] = [
     type: 'INCOME',
     amount: 1650000,
     description: 'Sueldo Mensual',
-    categoryId: 'otros',
+    categoryId: 'sueldo_principal',
     paymentMethod: 'TRANSFER',
     space: 'WALLET',
     isInstallment: false,

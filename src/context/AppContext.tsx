@@ -10,7 +10,7 @@ import {
   FixedExpense, 
   ShoppingItem, 
   InAppNotification,
-  ExpenseCategory,
+  CategoryItem,
   PaymentMethod,
   DollarSource,
   BrokerAsset
@@ -24,7 +24,9 @@ import {
   INITIAL_BUDGETS, 
   INITIAL_FIXED_EXPENSES, 
   INITIAL_SHOPPING_ITEMS, 
-  INITIAL_NOTIFICATIONS 
+  INITIAL_NOTIFICATIONS,
+  INITIAL_EXPENSE_CATEGORIES,
+  INITIAL_INCOME_CATEGORIES
 } from '../data/initialData';
 import { 
   calculateUpdatedDollarSummary, 
@@ -66,7 +68,7 @@ interface AppContextType {
     type: 'EXPENSE' | 'INCOME';
     amount: number;
     description: string;
-    categoryId: ExpenseCategory;
+    categoryId: string;
     paymentMethod: PaymentMethod;
     isInstallment: boolean;
     installmentCount?: number;
@@ -95,6 +97,12 @@ interface AppContextType {
   addShoppingItem: (item: string, category: 'supermercado' | 'verduleria' | 'farmacia' | 'otros') => void;
 
   cloneCurrentBudget: (inflationPct: number, targetMonth: string) => void;
+
+  // Categorías personalizables
+  expenseCategories: CategoryItem[];
+  incomeCategories: CategoryItem[];
+  allCategories: Record<string, CategoryItem>;
+  addCustomCategory: (label: string, type: 'EXPENSE' | 'INCOME') => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -110,7 +118,9 @@ const STORAGE_KEYS = {
   SHOPPING: 'finhome_shopping_v1',
   NOTIFICATIONS: 'finhome_notifs_v1',
   SPACE: 'finhome_space_v1',
-  MONTH: 'finhome_month_v1'
+  MONTH: 'finhome_month_v1',
+  CUSTOM_EXPENSE_CATS: 'finhome_custom_expense_cats_v1',
+  CUSTOM_INCOME_CATS: 'finhome_custom_income_cats_v1'
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -190,6 +200,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
   });
 
+  // Categorías personalizables (se suman a las predefinidas)
+  const [customExpenseCats, setCustomExpenseCats] = useState<CategoryItem[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.CUSTOM_EXPENSE_CATS);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [customIncomeCats, setCustomIncomeCats] = useState<CategoryItem[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.CUSTOM_INCOME_CATS);
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const expenseCategories = [...INITIAL_EXPENSE_CATEGORIES, ...customExpenseCats];
+  const incomeCategories = [...INITIAL_INCOME_CATEGORIES, ...customIncomeCats];
+
+  const allCategories: Record<string, CategoryItem> = [...expenseCategories, ...incomeCategories].reduce(
+    (acc, item) => { acc[item.id] = item; return acc; },
+    {} as Record<string, CategoryItem>
+  );
+
   // Guardar en localStorage ante cada cambio
   useEffect(() => { localStorage.setItem(STORAGE_KEYS.TRANSACTIONS, JSON.stringify(transactions)); }, [transactions]);
   useEffect(() => { localStorage.setItem(STORAGE_KEYS.INSTALLMENTS, JSON.stringify(installments)); }, [installments]);
@@ -200,6 +229,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => { localStorage.setItem(STORAGE_KEYS.FIXED_EXPENSES, JSON.stringify(fixedExpenses)); }, [fixedExpenses]);
   useEffect(() => { localStorage.setItem(STORAGE_KEYS.SHOPPING, JSON.stringify(shoppingList)); }, [shoppingList]);
   useEffect(() => { localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(notifications)); }, [notifications]);
+  useEffect(() => { localStorage.setItem(STORAGE_KEYS.CUSTOM_EXPENSE_CATS, JSON.stringify(customExpenseCats)); }, [customExpenseCats]);
+  useEffect(() => { localStorage.setItem(STORAGE_KEYS.CUSTOM_INCOME_CATS, JSON.stringify(customIncomeCats)); }, [customIncomeCats]);
 
   // Cálculos derivados del mes y espacio actual
   const currentTransactions = transactions.filter(
@@ -230,7 +261,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     type: 'EXPENSE' | 'INCOME';
     amount: number;
     description: string;
-    categoryId: ExpenseCategory;
+    categoryId: string;
     paymentMethod: PaymentMethod;
     isInstallment: boolean;
     installmentCount?: number;
@@ -448,6 +479,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setNotifications(prev => [notif, ...prev]);
   };
 
+  // -------- Gestión de categorías personalizadas --------
+  const EMOJI_POOL = ['📌','🏷️','💡','🎯','📦','🔧','🎨','📊','🏠','🚗','💊','🎮','🍕','📚','💳','🛒','✈️','🎁','🐾','⚡'];
+
+  const addCustomCategory = (label: string, type: 'EXPENSE' | 'INCOME') => {
+    const id = `custom_${type.toLowerCase()}_${Date.now()}`;
+    const emojiIdx = (customExpenseCats.length + customIncomeCats.length) % EMOJI_POOL.length;
+    const newCat: CategoryItem = {
+      id,
+      label,
+      type,
+      icon: EMOJI_POOL[emojiIdx],
+      color: type === 'EXPENSE' ? '#A855F7' : '#22D3EE'
+    };
+    if (type === 'EXPENSE') {
+      setCustomExpenseCats(prev => [...prev, newCat]);
+    } else {
+      setCustomIncomeCats(prev => [...prev, newCat]);
+    }
+  };
+
   return (
     <AppContext.Provider value={{
       activeSpace,
@@ -475,7 +526,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addFixedExpense,
       toggleShoppingItem,
       addShoppingItem,
-      cloneCurrentBudget
+      cloneCurrentBudget,
+      expenseCategories,
+      incomeCategories,
+      allCategories,
+      addCustomCategory
     }}>
       {children}
     </AppContext.Provider>

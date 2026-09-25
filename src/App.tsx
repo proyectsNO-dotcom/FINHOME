@@ -11,6 +11,7 @@ import { FixedExpenses } from './components/household/FixedExpenses';
 import { ShoppingList } from './components/household/ShoppingList';
 import { TransactionModal } from './components/transactions/TransactionModal';
 import { NotificationsModal } from './components/notifications/NotificationsModal';
+import { CategoriesSettingsModal } from './components/categories/CategoriesSettingsModal';
 import { DollarSign, Briefcase } from 'lucide-react';
 
 const MainApp: React.FC = () => {
@@ -18,12 +19,16 @@ const MainApp: React.FC = () => {
   const [activeTab, setActiveTab] = useState<NavTab>('resumen');
   const [isQuickAddOpen, setIsQuickAddOpen] = useState<boolean>(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState<boolean>(false);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState<boolean>(false);
   const [investmentsSubTab, setInvestmentsSubTab] = useState<'dollars' | 'brokers'>('dollars');
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-300">
       {/* Header Fijo con Switcher Dual */}
-      <Header onOpenNotifications={() => setIsNotificationsOpen(true)} />
+      <Header 
+        onOpenNotifications={() => setIsNotificationsOpen(true)}
+        onOpenCategories={() => setIsCategoriesOpen(true)}
+      />
 
       {/* Contenedor Principal Mobile-First */}
       <main className="flex-1 max-w-md w-full mx-auto px-4 pt-4">
@@ -96,11 +101,20 @@ const MainApp: React.FC = () => {
       <TransactionModal
         isOpen={isQuickAddOpen}
         onClose={() => setIsQuickAddOpen(false)}
+        onOpenManageCategories={() => {
+          setIsQuickAddOpen(false);
+          setIsCategoriesOpen(true);
+        }}
       />
 
       <NotificationsModal
         isOpen={isNotificationsOpen}
         onClose={() => setIsNotificationsOpen(false)}
+      />
+
+      <CategoriesSettingsModal
+        isOpen={isCategoriesOpen}
+        onClose={() => setIsCategoriesOpen(false)}
       />
     </div>
   );

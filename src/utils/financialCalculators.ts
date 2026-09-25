@@ -105,23 +105,64 @@ const KEYWORD_DICTIONARY: Record<string, ExpenseCategory> = {
   sodimac: 'tecnologia_hogar',
   mercadolibre: 'tecnologia_hogar',
   ferreteria: 'tecnologia_hogar',
+
+  // Ingresos
+  sueldo: 'sueldo_principal',
+  salario: 'sueldo_principal',
+  quincena: 'sueldo_principal',
+  haberes: 'sueldo_principal',
+  aguinaldo: 'aguinaldo_sac',
+  sac: 'aguinaldo_sac',
+  freelance: 'freelance_honorarios',
+  honorarios: 'freelance_honorarios',
+  factura: 'freelance_honorarios',
+  facturacion: 'freelance_honorarios',
+  reintegro: 'reintegros_devoluciones',
+  reembolso: 'reintegros_devoluciones',
+  devolucion: 'reintegros_devoluciones',
+  cashback: 'reintegros_devoluciones',
+  dividendo: 'rendimientos_inversiones',
+  plazofijo: 'rendimientos_inversiones',
+  caucion: 'rendimientos_inversiones',
+  intereses: 'rendimientos_inversiones',
 };
 
-export const preclassifyDescription = (description: string): ExpenseCategory | null => {
+const INCOME_CATEGORY_IDS = new Set([
+  'sueldo_principal',
+  'aguinaldo_sac',
+  'freelance_honorarios',
+  'alquileres_cobrados',
+  'ventas_usados',
+  'rendimientos_inversiones',
+  'reintegros_devoluciones',
+  'otros_ingresos'
+]);
+
+export const preclassifyDescription = (
+  description: string, 
+  operationType?: 'EXPENSE' | 'INCOME'
+): string | null => {
   if (!description) return null;
   const normalized = description.toLowerCase().trim();
   
+  const isCategoryAllowed = (catId: string) => {
+    if (!operationType) return true;
+    const isIncome = INCOME_CATEGORY_IDS.has(catId);
+    return operationType === 'INCOME' ? isIncome : !isIncome;
+  };
+
   // 1. Coincidencia exacta de palabras
   const words = normalized.split(/\s+/);
   for (const word of words) {
-    if (KEYWORD_DICTIONARY[word]) {
-      return KEYWORD_DICTIONARY[word];
+    const match = KEYWORD_DICTIONARY[word];
+    if (match && isCategoryAllowed(match)) {
+      return match;
     }
   }
 
   // 2. Coincidencia de subcadenas clave
   for (const [key, category] of Object.entries(KEYWORD_DICTIONARY)) {
-    if (normalized.includes(key)) {
+    if (normalized.includes(key) && isCategoryAllowed(category)) {
       return category;
     }
   }

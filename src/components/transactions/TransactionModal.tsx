@@ -1,40 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { ExpenseCategory, PaymentMethod } from '../../types';
-import { CATEGORIES_META } from '../../data/initialData';
+import { PaymentMethod } from '../../types';
 import { preclassifyDescription } from '../../utils/financialCalculators';
 import { formatCurrency, getNextMonth } from '../../utils/formatters';
-import { X, Sparkles, CreditCard, Calendar, Check, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
+import { X, Sparkles, CreditCard, Calendar, Check, ArrowDownLeft, ArrowUpRight, Plus, Settings } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onOpenManageCategories?: () => void;
 }
 
 const COMMON_INSTALLMENT_OPTIONS = [1, 3, 6, 9, 12, 18, 24];
 
-export const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onClose }) => {
-  const { activeSpace, currentMonth, addTransaction } = useApp();
+export const TransactionModal: React.FC<TransactionModalProps> = ({ 
+  isOpen, 
+  onClose,
+  onOpenManageCategories 
+}) => {
+  const { 
+    activeSpace, 
+    currentMonth, 
+    addTransaction,
+    expenseCategories,
+    incomeCategories,
+    addCustomCategory
+  } = useApp();
   const isWallet = activeSpace === 'WALLET';
 
   const [type, setType] = useState<'EXPENSE' | 'INCOME'>('EXPENSE');
   const [amountStr, setAmountStr] = useState<string>('');
   const [description, setDescription] = useState<string>('');
-  const [category, setCategory] = useState<ExpenseCategory>('supermercado');
+  const [category, setCategory] = useState<string>('supermercado');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('DEBIT');
   
+  // Agregar categoría rápida inline
+  const [isAddingInline, setIsAddingInline] = useState<boolean>(false);
+  const [newCategoryName, setNewCategoryName] = useState<string>('');
+
   // Manejo de cuotas
   const [isInstallment, setIsInstallment] = useState<boolean>(false);
   const [installmentCount, setInstallmentCount] = useState<number>(3);
   const [cardName, setCardName] = useState<string>('Visa Santander');
 
-  // Pre-clasificación inteligente
-  const [suggestedCategory, setSuggestedCategory] = useState<ExpenseCategory | null>(null);
+  // Categorías activas según tipo
+  const activeCategories = type === 'EXPENSE' ? expenseCategories : incomeCategories;
+
+  // Ajustar categoría cuando cambia el tipo (Gasto vs Ingreso)
+  useEffect(() => {
+    const list = type === 'EXPENSE' ? expenseCategories : incomeCategories;
+    if (list.length > 0 && !list.some(c => c.id === category)) {
+      setCategory(list[0].id);
+    }
+    setIsAddingInline(false);
+    setNewCategoryName('');
+  }, [type, expenseCategories, incomeCategories]);
+
+  // Pre-clasificación inteligente sensible al tipo de operación
+  const [suggestedCategory, setSuggestedCategory] = useState<string | null>(null);
 
   useEffect(() => {
     if (description.trim().length > 2) {
-      const suggested = preclassifyDescription(description);
+      const suggested = preclassifyDescription(description, type);
       setSuggestedCategory(suggested);
       if (suggested) {
         setCategory(suggested);
@@ -42,7 +70,7 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onCl
     } else {
       setSuggestedCategory(null);
     }
-  }, [description]);
+  }, [description, type]);
 
   if (!isOpen) return null;
 
@@ -178,11 +206,24 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onCl
 
           {/* Categoría Selector */}
           <div>
-            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1.5">
-              Categoría
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Categoría de {type === 'EXPENSE' ? 'Gasto' : 'Ingreso'}
+              </label>
+              {onOpenManageCategories && (
+                <button
+                  type="button"
+                  onClick={onOpenManageCategories}
+                  className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                >
+                  <Settings className="w-3 h-3" />
+                  Gestionar
+                </button>
+              )}
+            </div>
+
             <div className="grid grid-cols-2 gap-2">
-              {Object.values(CATEGORIES_META).map(cat => (
+              {activeCategories.map(cat => (
                 <button
                   key={cat.id}
                   type="button"
@@ -193,10 +234,71 @@ export const TransactionModal: React.FC<TransactionModalProps> = ({ isOpen, onCl
                       : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
                   }`}
                 >
-                  <span className="w-2 h-2 rounded-full bg-slate-400" />
+                  <span className="text-sm">
+                    {cat.icon || (type === 'EXPENSE' ? '💸' : '💰')}
+                  </span>
                   <span className="truncate">{cat.label}</span>
                 </button>
               ))}
+
+              {/* Botón / Input para agregar categoría al vuelo */}
+              {!isAddingInline ? (
+                <button
+                  type="button"
+                  onClick={() => setIsAddingInline(true)}
+                  className="flex items-center justify-center gap-1.5 p-2.5 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:border-indigo-500 hover:text-indigo-600 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Nueva</span>
+                </button>
+              ) : (
+                <div className="col-span-2 flex items-center gap-1.5 p-1.5 bg-slate-100 dark:bg-slate-800/90 rounded-xl border border-indigo-300 dark:border-indigo-700">
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    placeholder={`Nombre nueva categoría de ${type === 'EXPENSE' ? 'gasto' : 'ingreso'}...`}
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newCategoryName.trim()) {
+                          addCustomCategory(newCategoryName.trim(), type);
+                          setNewCategoryName('');
+                          setIsAddingInline(false);
+                        }
+                      } else if (e.key === 'Escape') {
+                        setIsAddingInline(false);
+                        setNewCategoryName('');
+                      }
+                    }}
+                    className="flex-1 text-xs px-2 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (newCategoryName.trim()) {
+                        addCustomCategory(newCategoryName.trim(), type);
+                        setNewCategoryName('');
+                        setIsAddingInline(false);
+                      }
+                    }}
+                    className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition"
+                  >
+                    Guardar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddingInline(false);
+                      setNewCategoryName('');
+                    }}
+                    className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
